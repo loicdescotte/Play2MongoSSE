@@ -1,0 +1,20 @@
+@(filter: String)
+
+@main("news") {
+
+<script type="text/javascript" charset="utf-8">
+    var feed = new EventSource('/news/search?filter='+"@filter");
+	feed.addEventListener('message', function(e) {
+        var result  = jQuery.parseJSON(event.data);
+        $("#searchResults").after("<li>'" + result.author + " : " + result.message + "</li>");   
+      }, false);
+</script>
+
+<div id="content">     
+<h2>"@filter" search results</h2>
+
+ <ul id="searchResults">
+ </ul> 
+</div>
+
+}

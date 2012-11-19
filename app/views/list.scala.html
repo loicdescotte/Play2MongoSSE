@@ -1,0 +1,51 @@
+@(posts: List[Post], postForm: Form[Post])(implicit flash: play.api.mvc.Flash)
+
+@import helper._
+@import html5.tags.html._
+
+@main("news") {
+ 
+<div id="content">     
+     @flash.get("success").map { message =>
+        <div class="alert-message warning">
+            <strong>Done!</strong> @message
+        </div>
+     } 
+     
+     @flash.get("error").map { message =>
+        <div class="alert-message warning">
+            <strong>Oups!</strong> @message
+        </div>
+     } 
+
+     <h2>Search</h2>
+     <form action="/news/search_page">                
+        <label for=search>Search : </label> <input type="text" id="search" name="filter">           
+        <input type="submit" value="Go!" class="btn primary">
+    </form>
+     
+    <a href="/news"> <h2>What's up?</h2> </a>    
+    @form(routes.Application.create()) {
+        <fieldset>
+	        <div class="input">        
+        	    @text(postForm("author"), 'label -> "Your name : ")
+	            @text(postForm("message"), 'label -> "Your message : ")
+        	</div>
+        </fieldset>
+
+        <div class="actions">
+            <input type="submit" value="Go!" class="btn primary"> or 
+            <a href="/" class="btn">Cancel</a> 
+        </div>        
+    }
+
+	<h1>Messages</h1>
+    @for(post <- posts){
+    	<div class="post"> 
+    		<span class="author">@post.author : </span> 
+    		<a href="/news/edit/@post.id.get.stringify"><p>@post.message</p></a>
+    	</div>
+    }
+
+</div>
+}

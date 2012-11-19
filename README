@@ -1,0 +1,3 @@
+A demo app to push data from database to browser in realtime with reactivemongo and server side events
+
+This application contains some JSON serialization and client side HTML5 validation samples too
