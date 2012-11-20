@@ -14,7 +14,8 @@ import views._
 
 import reactivemongo.api._
 import reactivemongo.bson._
-import reactivemongo.bson.handlers.DefaultBSONHandlers._
+import reactivemongo.bson.handlers.DefaultBSONHandlers.DefaultBSONDocumentWriter
+import reactivemongo.bson.handlers.DefaultBSONHandlers.DefaultBSONReaderHandler
 
 import play.modules.reactivemongo._
 
