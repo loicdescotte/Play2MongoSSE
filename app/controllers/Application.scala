@@ -40,7 +40,7 @@ object Application extends Controller with MongoController {
   def Home = Redirect(routes.Application.list)
 
   def list = Action { implicit request =>
-    implicit val reader = PostBSONReader
+    implicit val bsonReader = PostBSONReader
     // Async resturns an AsyncResult from a Promise
     Async {
       //find all docs
@@ -76,6 +76,8 @@ object Application extends Controller with MongoController {
   def search(filter: String) = Action {
 
     import play.modules.reactivemongo.PlayBsonImplicits._
+    import reactivemongo.bson.handlers.DefaultBSONHandlers._
+
 
     Logger.info("filter : " + filter)
 
