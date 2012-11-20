@@ -18,6 +18,6 @@ This controller method pushes new data from mongo in live to a SSE socket :
 }
 
 ```
-Then the client is able to display new entries as soon as they are inserted in database **(no pull)**
+Then the client is able to display new entries as soon as they are inserted in database (no pull request)
 
 This application contains some JSON serialization and client side HTML5 validation samples too
