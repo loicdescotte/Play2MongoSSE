@@ -19,4 +19,4 @@ This controller method pushes new data from mongo in live to a SSE socket :
     Ok.stream(dataProducer through EventSource()).as("text/event-stream")
 }
 
-``
+```
