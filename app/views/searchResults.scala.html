@@ -3,7 +3,7 @@
 @main("news") {
 
 <script type="text/javascript" charset="utf-8">
-    var feed = new EventSource('/news/search?filter='+"@filter");
+        var feed = new EventSource("/news/search?filter=@filter");
 	feed.addEventListener('message', function(e) {
         var result  = jQuery.parseJSON(event.data);
         $("#searchResults").after("<li>'" + result.author + " : " + result.message + "</li>");   
