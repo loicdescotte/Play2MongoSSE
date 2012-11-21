@@ -25,7 +25,7 @@
     </form>
      
     <a href="/news"> <h2>What's up?</h2> </a>    
-    @form(routes.Application.create()) {
+    @form(routes.HtmlController.create()) {
         <fieldset>
 	        <div class="input">        
         	    @text(postForm("author"), 'label -> "Your name : ")

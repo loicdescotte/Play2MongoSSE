@@ -3,14 +3,17 @@
 # ~~~~
 
 # Home page
-GET     /                        controllers.Application.index()
-POST    /news                  	 controllers.Application.create()
-GET     /news                  	 controllers.Application.list()
-GET     /news.json               controllers.Application.listJson()
-GET     /news/edit/:id           controllers.Application.edit(id: String)
-POST    /news/update	         controllers.Application.update(id: String)
-GET     /news/search             controllers.Application.search(filter: String)
-GET    /news/search_page         controllers.Application.searchPage(filter: String)
+GET     /                        controllers.HtmlController.index()
+POST    /news                  	 controllers.HtmlController.create()
+GET     /news                  	 controllers.HtmlController.list()
+GET     /news/edit/:id           controllers.HtmlController.edit(id: String)
+POST    /news/update	         controllers.HtmlController.update(id: String)
+GET     /news/search_page        controllers.HtmlController.searchPage(filter: String)
+
+#Json urls
+GET     /news.json               controllers.JsonController.listJson()
+GET     /news/search             controllers.JsonController.search(filter: String)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file            controllers.Assets.at(path="/public", file)

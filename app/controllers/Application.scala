@@ -23,11 +23,9 @@ import libs.iteratee._
 import libs.EventSource
 import libs.json.JsValue
 
-object Application extends Controller with MongoController {
-
-  val db = ReactiveMongoPlugin.db
-  val collection = db.collection("postsMongoCollection")
-  collection.createCapped(1024 * 1024, None)
+object HtmlController extends MongoSSEApplication {
+  implicit val bsonWriter = PostBSONWriter
+  implicit val bsonReader = PostBSONReader
 
   val postForm = Form(
     mapping(
@@ -39,10 +37,9 @@ object Application extends Controller with MongoController {
 
   def index = Action { Home }
 
-  def Home = Redirect(routes.Application.list)
+  def Home = Redirect(routes.HtmlController.list)
 
   def list = Action { implicit request =>
-    implicit val bsonReader = PostBSONReader
     // Async resturns an AsyncResult from a Promise
     Async {
       //find all docs
@@ -53,46 +50,8 @@ object Application extends Controller with MongoController {
     }
   }
 
-  implicit val postJsonWrites = new Writes[Post] {
-    def writes(post: Post): JsValue = {
-      Json.obj(
-        "author" -> post.author,
-        "message" -> post.message)
-    }
-  }
-
-  def listJson = Action {
-    implicit val bsonReader = PostBSONReader
-    Async {
-      val found = collection.find(BSONDocument()).toList
-      found map {
-        posts => Ok(Json.toJson(posts))
-      }
-    }
-  }
-
   def searchPage(filter: String) = Action {
     Ok(html.searchResults(filter))
-  }
-
-  def search(filter: String) = Action {
-
-    import play.modules.reactivemongo.PlayBsonImplicits._
-
-    Logger.info("filter : " + filter)
-
-    val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
-    //query results asynchronous cursor
-    val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
-
-    //create the enumerator
-    val dataProducer = cursor.enumerate
-
-    //console output
-    //dataProducer.apply(Iteratee.foreach {doc =>  println("found document: " + doc)})
-
-    //stream the results
-    Ok.stream(dataProducer &> EventSource()).as("text/event-stream")
   }
 
   def edit(id: String) = Action { implicit request =>
@@ -111,7 +70,6 @@ object Application extends Controller with MongoController {
   }
 
   def create() = Action { implicit request =>
-    implicit val bsonWriter = PostBSONWriter
     //no validation here (just an example :)
     val post = postForm.bindFromRequest.get
     AsyncResult {
@@ -135,4 +93,42 @@ object Application extends Controller with MongoController {
       })
   }
 
+}
+
+object JsonController extends MongoSSEApplication {
+
+  import play.modules.reactivemongo.PlayBsonImplicits._
+
+  def listJson = Action {
+    Async {
+      val query = QueryBuilder().query(BSONDocument())
+      //automatic BSON to JSON conversion (via play default implicits)
+      val found = collection.find[JsValue](query, QueryOpts()).toList
+      found map {
+        posts => Ok(Json.toJson(posts))
+      }
+    }
+  }
+
+  def search(filter: String) = Action {
+
+    Logger.info("filter : " + filter)
+
+    val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
+    //query results asynchronous cursor
+    val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
+
+    //create the enumerator
+    val dataProducer = cursor.enumerate
+
+    //stream the results
+    Ok.stream(dataProducer &> EventSource()).as("text/event-stream")
+  }
+
+}
+
+class MongoSSEApplication extends Controller with MongoController {
+  val db = ReactiveMongoPlugin.db
+  val collection = db.collection("postsMongoCollection")
+  collection.createCapped(1024 * 1024, None)
 }

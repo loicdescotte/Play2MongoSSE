@@ -7,7 +7,7 @@
 <div id="content">   
      
     <h1>Edit message</h1>   
-    @form(routes.Application.update(id)) {
+    @form(routes.HtmlController.update(id)) {
         <fieldset>
 			<div class="input">                	    
 	            @inputText(postForm("author"), 'label -> "Your name : ")
