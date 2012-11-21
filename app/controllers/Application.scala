@@ -33,7 +33,9 @@ object Application extends Controller with MongoController {
     mapping(
       "id" -> optional(of[String]),
       "author" -> nonEmptyText,
-      "message" -> nonEmptyText)(Post.build)(Post.unbuild))
+      "message" -> nonEmptyText
+    )(Post.build)(Post.unbuild)
+  )
 
   def index = Action { Home }
 
@@ -76,8 +78,6 @@ object Application extends Controller with MongoController {
   def search(filter: String) = Action {
 
     import play.modules.reactivemongo.PlayBsonImplicits._
-    import reactivemongo.bson.handlers.DefaultBSONHandlers._
-
 
     Logger.info("filter : " + filter)
 
