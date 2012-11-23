@@ -4,7 +4,6 @@ This controller method pushes new data from mongo in live to a SSE socket :
 
 ```scala
  def search(filter: String) = Action { 
-    //[...]
     val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
 
     //query results asynchronous cursor
