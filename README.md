@@ -1,4 +1,4 @@
-A Play 2.1 demo app to push data from database to browser in realtime with reactivemongo and server side events
+A Play 2.1 demo app to push data from database to browser in realtime with reactivemongo and server sent events
 
 This controller method pushes new data from mongo in live to a SSE socket : 
 
