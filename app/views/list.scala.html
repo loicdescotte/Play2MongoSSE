@@ -1,7 +1,6 @@
 @(posts: List[Post], postForm: Form[Post])(implicit flash: play.api.mvc.Flash)
 
 @import helper._
-@import html5.tags.html._
 
 @main("news") {
  
@@ -28,8 +27,8 @@
     @form(routes.HtmlController.create()) {
         <fieldset>
 	        <div class="input">        
-        	    @text(postForm("author"), 'label -> "Your name : ")
-	            @text(postForm("message"), 'label -> "Your message : ")
+        	    @inputText(postForm("author"), 'label -> "Your name : ")
+	            @inputText(postForm("message"), 'label -> "Your message : ")
         	</div>
         </fieldset>
 

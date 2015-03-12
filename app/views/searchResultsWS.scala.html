@@ -1,0 +1,47 @@
+@(filter: String)(implicit request: RequestHeader)
+
+@main("news") {
+
+<script type="text/javascript" charset="utf-8">
+
+  if ("WebSocket" in window)
+  {
+     console.log("WebSocket is supported by your Browser!");
+     // Let us open a web socket
+     var ws = new WebSocket("@routes.JsonController.searchWS(filter).webSocketURL()");
+     //var ws = new WebSocket("ws//:localhost:9000/news/searchWS");
+     ws.onopen = function()
+     {
+        // Web Socket is connected, send data using send()
+        ws.send("Message to send");
+        console.log("Message is sent...");
+     };
+     ws.onmessage = function (evt) 
+     {        
+     	var msg = evt.data;
+        console.log("Message is received : " + msg);
+        var result  = jQuery.parseJSON(msg);
+        $("#searchResults").after("<li>'" + result.author + " : " + result.message + "</li>");   
+     };
+     ws.onclose = function()
+     { 
+        // websocket is closed.
+        console.log("Connection is closed..."); 
+     };
+  }
+  else
+  {
+     // The browser doesn't support WebSocket
+     console.log("WebSocket NOT supported by your Browser!");
+  }
+
+</script>
+
+<div id="content">     
+<h2>"@filter" search results</h2>
+
+ <ul id="searchResults">
+ </ul> 
+</div>
+
+}

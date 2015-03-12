@@ -9,6 +9,7 @@ import play.api.data.Forms._
 import play.api.Play.current
 import play.api.data.format.Formats._
 import play.api.libs.json._
+import play.api.mvc.WebSocket
 import models._
 import views._
 
@@ -52,6 +53,10 @@ object HtmlController extends MongoSSEApplication {
 
   def searchPage(filter: String) = Action {
     Ok(html.searchResults(filter))
+  }
+
+  def searchPageWS(filter: String) = Action { implicit request =>
+    Ok(html.searchResultsWS(filter))
   }
 
   def edit(id: String) = Action { implicit request =>
@@ -99,7 +104,7 @@ object JsonController extends MongoSSEApplication {
 
   import play.modules.reactivemongo.PlayBsonImplicits._
 
-  def listJson = Action {
+  def listJson = Action { 
     Async {
       val query = QueryBuilder().query(BSONDocument())
       //automatic BSON to JSON conversion (via play default implicits)
@@ -120,6 +125,25 @@ object JsonController extends MongoSSEApplication {
     //stream the results
     Ok.stream(dataProducer &> EventSource()).as("text/event-stream")
   }
+
+  def searchWS(filter: String) = 
+  
+    WebSocket.using[JsValue] { request => 
+
+      Logger.info("filter : " + filter)
+      val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
+
+      val in = Iteratee.foreach[JsValue](js => println(js))
+
+      //query results asynchronous cursor
+      val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
+      //create the enumerator
+      val dataProducer = cursor.enumerate.andThen(Enumerator.eof)
+      //stream the results
+      
+      (in, dataProducer)
+
+    }
 
 }
 
