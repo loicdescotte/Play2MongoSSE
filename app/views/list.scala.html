@@ -1,6 +1,7 @@
 @(posts: List[Post], postForm: Form[Post])(implicit flash: play.api.mvc.Flash)
 
 @import helper._
+@import html5.tags.html._
 
 @main("news") {
  
@@ -18,17 +19,18 @@
      } 
 
      <h2>Search</h2>
-     <form action="/news/search_page_ws">                
+     <!-- for websocket : <form action="/news/search_page_ws">-->
+     <form action="/news/search_page">                
         <label for=search>Search : </label> <input type="text" id="search" name="filter">           
         <input type="submit" value="Go!" class="btn primary">
     </form>
      
     <a href="/news"> <h2>What's up?</h2> </a>    
-    @form(routes.HtmlController.create()) {
+    @helper.form(routes.HtmlController.create()) {
         <fieldset>
 	        <div class="input">        
-        	    @inputText(postForm("author"), 'label -> "Your name : ")
-	            @inputText(postForm("message"), 'label -> "Your message : ")
+        	    @text(postForm("author"), 'label -> "Your name : ")
+	            @text(postForm("message"), 'label -> "Your message : ")
         	</div>
         </fieldset>
 
