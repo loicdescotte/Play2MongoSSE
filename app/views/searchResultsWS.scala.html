@@ -12,9 +12,7 @@
      //var ws = new WebSocket("ws//:localhost:9000/news/searchWS");
      ws.onopen = function()
      {
-        // Web Socket is connected, send data using send()
-        ws.send("Message to send");
-        console.log("Message is sent...");
+        console.log("Connection is opened");
      };
      ws.onmessage = function (evt) 
      {        
@@ -23,6 +21,7 @@
         var result  = jQuery.parseJSON(msg);
         $("#searchResults").after("<li>'" + result.author + " : " + result.message + "</li>");   
      };
+     
      ws.onclose = function()
      { 
         // websocket is closed.

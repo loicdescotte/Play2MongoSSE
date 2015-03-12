@@ -138,7 +138,7 @@ object JsonController extends MongoSSEApplication {
       //query results asynchronous cursor
       val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
       //create the enumerator
-      val dataProducer = cursor.enumerate.andThen(Enumerator.eof)
+      val dataProducer = cursor.enumerate
       //stream the results
       
       (in, dataProducer)
