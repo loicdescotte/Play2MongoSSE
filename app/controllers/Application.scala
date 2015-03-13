@@ -23,6 +23,7 @@ import play.modules.reactivemongo._
 import libs.iteratee._
 import libs.EventSource
 import libs.json.JsValue
+import libs.json.Json
 
 object HtmlController extends MongoSSEApplication {
   implicit val bsonWriter = PostBSONWriter
@@ -126,24 +127,29 @@ object JsonController extends MongoSSEApplication {
     Ok.stream(dataProducer &> EventSource()).as("text/event-stream")
   }
 
-  def searchWS(filter: String) = 
-  
-    WebSocket.using[JsValue] { request => 
 
-      Logger.info("filter : " + filter)
-      val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
+  def searchWS =  WebSocket.using[JsValue] { request => 
 
-      val in = Iteratee.foreach[JsValue](js => println(js))
+    // out enumerator will be fed from the channel
+    val (out, channel) = Concurrent.broadcast[(JsValue)]
 
-      //query results asynchronous cursor
-      val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
-      //create the enumerator
-      val dataProducer = cursor.enumerate
-      //stream the results
+    val in = Iteratee.foreach[JsValue]{ msg => 
+
+    val filter = (msg \ "filter").as[JsString].value
+    Logger.info(filter)  
+
+    //query results asynchronous cursor
+    val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
+    val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
       
-      (in, dataProducer)
+    //stream the results : push each element from the curson in the channel
+    cursor.enumerate.run(Iteratee.foreach{result => channel push result})
+    
+  }
+  
+  (in, out)
 
-    }
+}
 
 }
 

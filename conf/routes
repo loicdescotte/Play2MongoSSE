@@ -14,7 +14,7 @@ GET     /news/search_page_ws     controllers.HtmlController.searchPageWS(filter:
 #Json urls
 GET     /news.json               controllers.JsonController.listJson()
 GET     /news/search             controllers.JsonController.search(filter: String)
-GET      /news/searchWS           controllers.JsonController.searchWS(filter: String)
+GET      /news/searchWS           controllers.JsonController.searchWS()
 
 
 # Map static resources from the /public folder to the /assets URL path
