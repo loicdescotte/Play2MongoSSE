@@ -128,7 +128,7 @@ object JsonController extends MongoSSEApplication {
 
   def searchWS(filter: String) = 
   
-    WebSocket.using[JsValue] { request => 
+    WebSocket.using[JsValue] { request =>       
 
       Logger.info("filter : " + filter)
       val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
@@ -141,6 +141,7 @@ object JsonController extends MongoSSEApplication {
       val dataProducer = cursor.enumerate
       //stream the results
       
+
       (in, dataProducer)
 
     }
