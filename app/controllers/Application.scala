@@ -35,7 +35,7 @@ object HtmlController extends MongoSSEApplication {
     mapping(
       "author" -> nonEmptyText,
       "message" -> nonEmptyText
-    )(Post.apply)(Post.unapply)
+    )(Post.build)(Post.unBuild)
   )
 
   def index = Action { Home }
@@ -61,17 +61,14 @@ object HtmlController extends MongoSSEApplication {
     Ok(html.searchResultsWS(filter))
   }
 
-  /*def edit(id: String) = Action { implicit request =>
-      val objectId = new BSONObjectID(id)
-      val cursor = collection.find(Json.obj("_id" -> objectId))
-      // promise of option of post
-      cursor.headOption.map {
-        result =>
-          result.map {
-            post => Ok(html.edit(id, postForm.fill(post)))
-          }.getOrElse(NotFound)
-      }
-  }*/
+  def edit(id: String) = Action.async { implicit request =>      
+      val cursorFuture = collection.find[JsValue](Json.obj("_id" -> BSONObjectID(id))).cursor[Post].collect[List]()
+     
+      cursorFuture.map{ c => c.headOption.map { post => 
+            Ok(html.edit(id, postForm.fill(post)))
+      }.getOrElse(NotFound)
+    }
+  }
 
   def create() = Action.async { implicit request =>
     //no validation here (just an example :)
@@ -79,22 +76,22 @@ object HtmlController extends MongoSSEApplication {
       collection.insert(post).map(_ => Home)
   }
 
-/*
-  def update(id: String) = Action { implicit request =>
+
+  def update(id: String) = Action.async { implicit request =>
     postForm.bindFromRequest.fold(
       //return to edit page with entered values
-      errors => Ok(views.html.edit(id, errors)),
+      errors => Future.successful(Ok(views.html.edit(id, errors))),
       post => {
-        val objectId = new BSONObjectID(id)
-        val modifier = BSONDocument(
-          "$set" -> BSONDocument(
-            "author" -> BSONString(post.author),
-            "message" -> BSONString(post.message)))
-        collection.update(BSONDocument("_id" -> objectId), modifier).map { _ =>
+        val objectId = BSONObjectID(id)
+        val modifier = Json.obj(
+          "$set" -> Json.obj(
+            "author" -> JsString(post.author),
+            "message" -> JsString(post.message)))
+        collection.update(Json.obj("_id" -> objectId), modifier).map { _ =>
           Home
         }
       })
-  }*/
+  }
 
 }
 
