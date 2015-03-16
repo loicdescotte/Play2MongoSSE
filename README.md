@@ -1,4 +1,4 @@
-A Play 2.1 demo app to push data from database to browser in realtime with reactivemongo and server sent events
+A Play Framework demo app to push data from database to browser in realtime with reactivemongo and server sent events (or WebSockets)
 
 This controller method pushes new data from mongo in live to a SSE socket : 
 
@@ -13,7 +13,7 @@ This controller method pushes new data from mongo in live to a SSE socket :
     val dataProducer = cursor.enumerate
 
     //stream the results
-    Ok.stream(dataProducer through EventSource()).as("text/event-stream")
+    Ok.chunked(dataProducer through EventSource()).as("text/event-stream")
 }
 
 ```
