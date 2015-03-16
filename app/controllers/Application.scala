@@ -15,39 +15,41 @@ import views._
 
 import reactivemongo.api._
 import reactivemongo.bson._
-import reactivemongo.bson.handlers.DefaultBSONHandlers.DefaultBSONDocumentWriter
-import reactivemongo.bson.handlers.DefaultBSONHandlers.DefaultBSONReaderHandler
+
+import play.api.libs.json._
 
 import play.modules.reactivemongo._
+import play.modules.reactivemongo.json.collection.JSONCollection
+import play.modules.reactivemongo.json.BSONFormats._
 
 import libs.iteratee._
 import libs.EventSource
 import libs.json.JsValue
+import libs.json.Json
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object HtmlController extends MongoSSEApplication {
-  implicit val bsonWriter = PostBSONWriter
-  implicit val bsonReader = PostBSONReader
 
   val postForm = Form(
     mapping(
-      "id" -> optional(of[String]),
       "author" -> nonEmptyText,
       "message" -> nonEmptyText
-    )(Post.build)(Post.unbuild)
+    )(Post.apply)(Post.unapply)
   )
 
   def index = Action { Home }
 
   def Home = Redirect(routes.HtmlController.list)
 
-  def list = Action { implicit request =>
-    // Async resturns an AsyncResult from a Promise
-    Async {
-      //find all docs
-      val found = collection.find(BSONDocument()).toList
-      found.map { posts =>
-        Ok(html.list(posts, postForm))
-      }
+  def list = Action.async { implicit request =>    
+    //find all docs
+    val furturePosts = collection.find(Json.obj())
+      .cursor[Post]
+      .collect[List]()
+      
+      furturePosts.map { posts =>
+        Ok(html.list(posts, postForm))      
     }
   }
 
@@ -59,34 +61,30 @@ object HtmlController extends MongoSSEApplication {
     Ok(html.searchResultsWS(filter))
   }
 
-  def edit(id: String) = Action { implicit request =>
-    implicit val bsonReader = PostBSONReader
-    Async {
+  /*def edit(id: String) = Action { implicit request =>
       val objectId = new BSONObjectID(id)
-      val cursor = collection.find(BSONDocument("_id" -> objectId))
-      // promise of option of post!
+      val cursor = collection.find(Json.obj("_id" -> objectId))
+      // promise of option of post
       cursor.headOption.map {
         result =>
           result.map {
             post => Ok(html.edit(id, postForm.fill(post)))
           }.getOrElse(NotFound)
       }
-    }
-  }
+  }*/
 
-  def create() = Action { implicit request =>
+  def create() = Action.async { implicit request =>
     //no validation here (just an example :)
     val post = postForm.bindFromRequest.get
-    AsyncResult {
       collection.insert(post).map(_ => Home)
-    }
   }
 
+/*
   def update(id: String) = Action { implicit request =>
     postForm.bindFromRequest.fold(
       //return to edit page with entered values
       errors => Ok(views.html.edit(id, errors)),
-      post => AsyncResult {
+      post => {
         val objectId = new BSONObjectID(id)
         val modifier = BSONDocument(
           "$set" -> BSONDocument(
@@ -96,60 +94,59 @@ object HtmlController extends MongoSSEApplication {
           Home
         }
       })
-  }
+  }*/
 
 }
 
 object JsonController extends MongoSSEApplication {
 
-  import play.modules.reactivemongo.PlayBsonImplicits._
-
-  def listJson = Action { 
-    Async {
-      val query = QueryBuilder().query(BSONDocument())
-      //automatic BSON to JSON conversion (via play default implicits)
-      val found = collection.find[JsValue](query, QueryOpts()).toList
-      found map {
-        posts => Ok(Json.toJson(posts))
-      }
+  def listJson = Action.async {     
+    //automatic BSON to JSON conversion (via play default implicits)
+    val found = collection.find[JsValue](Json.obj()).cursor[Post].collect[List]()
+    found map {
+      posts => Ok(Json.toJson(posts))
     }
   }
 
   def search(filter: String) = Action {
     Logger.info("filter : " + filter)
-    val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
+    val query = Json.obj("message" -> BSONRegex(filter, ""))
     //query results asynchronous cursor
-    val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
+    val cursor = collection.find[JsValue](query).options(QueryOpts().tailable.awaitData).cursor[JsValue]
     //create the enumerator
-    val dataProducer = cursor.enumerate
+    val dataProducer = cursor.enumerate(Int.MaxValue)
     //stream the results
-    Ok.stream(dataProducer &> EventSource()).as("text/event-stream")
+    Ok.chunked(dataProducer &> EventSource()).as("text/event-stream")
   }
 
-  def searchWS(filter: String) = 
-  
-    WebSocket.using[JsValue] { request =>       
 
-      Logger.info("filter : " + filter)
-      val query = QueryBuilder().query(BSONDocument("message" -> BSONRegex(filter, "")))
+  def searchWS =  WebSocket.using[JsValue] { request => 
 
-      val in = Iteratee.foreach[JsValue](js => println(js))
+    // out enumerator will be fed from the channel
+    val (out, channel) = Concurrent.broadcast[(JsValue)]
+
+    val in = Iteratee.foreach[JsValue]{ msg => 
+
+      val filter = (msg \ "filter").as[JsString].value
+      Logger.info(filter)  
 
       //query results asynchronous cursor
-      val cursor = collection.find[JsValue](query, QueryOpts().tailable.awaitData)
-      //create the enumerator
-      val dataProducer = cursor.enumerate
-      //stream the results
-      
-
-      (in, dataProducer)
-
+      val query = Json.obj("message" -> BSONRegex(filter, ""))
+      val cursor = collection.find[JsValue](query).options(QueryOpts().tailable.awaitData).cursor[JsValue]
+         
+      //stream the results : push each element from the curson in the channel
+      val cursorEnumerator = cursor.enumerate(Int.MaxValue)
+      cursorEnumerator.run(Iteratee.foreach{result => channel push result})
+    
     }
+  
+    (in, out)
+  }
 
 }
 
 class MongoSSEApplication extends Controller with MongoController {
-  val db = ReactiveMongoPlugin.db
-  val collection = db.collection("postsMongoCollection")
+  override val db = ReactiveMongoPlugin.db
+  val collection = db.collection[JSONCollection]("postsMongoCollection")
   collection.createCapped(1024 * 1024, None)
 }

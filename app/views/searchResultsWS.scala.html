@@ -8,11 +8,12 @@
   {
      console.log("WebSocket is supported by your Browser!");
      // Let us open a web socket
-     var ws = new WebSocket("@routes.JsonController.searchWS(filter).webSocketURL()");
+     var ws = new WebSocket("@routes.JsonController.searchWS.webSocketURL()");
      //var ws = new WebSocket("ws//:localhost:9000/news/searchWS");
      ws.onopen = function()
      {
         console.log("Connection is opened");
+        ws.send('{ "filter": "@filter"}');
      };
      ws.onmessage = function (evt) 
      {        

@@ -19,8 +19,13 @@
      } 
 
      <h2>Search</h2>
-     <!-- for websocket : <form action="/news/search_page_ws">-->
      <form action="/news/search_page">                
+        <label for=search>Search : </label> <input type="text" id="search" name="filter">           
+        <input type="submit" value="Go!" class="btn primary">
+    </form>
+
+     <h2>Search and stream with WebSockets</h2>
+     <form action="/news/search_page_ws">             
         <label for=search>Search : </label> <input type="text" id="search" name="filter">           
         <input type="submit" value="Go!" class="btn primary">
     </form>
@@ -44,7 +49,7 @@
     @for(post <- posts){
     	<div class="post"> 
     		<span class="author">@post.author : </span> 
-    		<a href="/news/edit/@post.id.get.stringify"><p>@post.message</p></a>
+    		<a href="#" @**href="/news/edit/@post.id.get.stringify"**@><p>@post.message</p></a>
     	</div>
     }
 
